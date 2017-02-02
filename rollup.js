@@ -18,7 +18,7 @@ if (production)
     replace({ "process.env.NODE_ENV": JSON.stringify("production") })
   );
 export default {
-  entry: "index.js",
+  entry: "src/index.js",
   format: "cjs",
   plugins: plugins,
   dest: "build/bundle.js"

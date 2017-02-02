@@ -14,11 +14,12 @@
   "author": "tonis",
   "license": "ISC",
   "dependencies": {
+    "pixi.js": "^4.3.4",
     "rollup": "latest",
     "rollup-plugin-buble": "^0.15.0",
     "rollup-plugin-commonjs": "^6.0.0",
-    "rollup-plugin-node-resolve": "latest",
     "rollup-plugin-json": "latest",
+    "rollup-plugin-node-resolve": "latest",
     "rollup-plugin-npm": "^2.0.0",
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-uglify": "latest",
