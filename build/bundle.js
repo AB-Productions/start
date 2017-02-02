@@ -17,8 +17,6 @@ PIXI.loader.add("/images/worm.png").load(render);
 
 function render() {
   var worm = new PIXI.Sprite(PIXI.loader.resources["/images/worm.png"].texture);
-  worm.x = 55;
-  worm.y = 45;
 
   stage.addChild(worm);
   renderer.render(stage);
