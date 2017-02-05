@@ -4,8 +4,8 @@
   "description": "start with rollup",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development rollup --watch --config rollup.js",
-    "build": "NODE_ENV=production rollup --config rollup.js"
+    "dev": "set NODE_ENV=development && rollup --watch --config ./config.js",
+    "build": "set NODE_ENV=production && rollup --config ./config.js"
   },
   "keywords": [
     "rolup",
@@ -24,5 +24,8 @@
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-uglify": "latest",
     "rollup-watch": "^2.5.0"
+  },
+  "devDependencies": {
+    "rollup-plugin-node-builtins": "^2.0.0"
   }
 }
