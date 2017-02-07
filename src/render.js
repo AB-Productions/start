@@ -19,7 +19,7 @@ export default class Render {
     const data = Object.keys(stats);
     data.forEach(key => {
       if (!this.items[key]) {
-        this.addResource({ key, stats });
+        this.addResource({ key, stats: stats[key] });
       } else {
         this.items[key].x = stats[key].x;
         this.items[key].y = stats[key].y;
@@ -27,13 +27,8 @@ export default class Render {
     });
   }
   addResource(data) {
-    this.loader.add(data.key, data.stats.skin);
-    this.loader.load(() => {
-      this.items[data.key] = new PIXI.Sprite(
-        PIXI.loader.resources[data.key].texture
-      );
-      this.stage.addChild(this.items[data.key]);
-    });
+    this.items[data.key] = new PIXI.Sprite(this.worm);
+    this.stage.addChild(this.items[data.key]);
   }
   loadResources(resources) {
     const models = Object.keys(resources).map(key => {
@@ -49,6 +44,7 @@ export default class Render {
   initialize(models) {
     if (models)
       models.forEach(key => {
+        this.worm = PIXI.loader.resources[key].texture;
         this.items[key] = new PIXI.Sprite(PIXI.loader.resources[key].texture);
         this.stage.addChild(this.items[key]);
       });

@@ -23,7 +23,7 @@ Render$1.prototype.update = function update (stats) {
   var data = Object.keys(stats);
   data.forEach(function (key) {
     if (!this$1.items[key]) {
-      this$1.addResource({ key: key, stats: stats });
+      this$1.addResource({ key: key, stats: stats[key] });
     } else {
       this$1.items[key].x = stats[key].x;
       this$1.items[key].y = stats[key].y;
@@ -31,15 +31,8 @@ Render$1.prototype.update = function update (stats) {
   });
 };
 Render$1.prototype.addResource = function addResource (data) {
-    var this$1 = this;
-
-  this.loader.add(data.key, data.stats.skin);
-  this.loader.load(function () {
-    this$1.items[data.key] = new PIXI.Sprite(
-      PIXI.loader.resources[data.key].texture
-    );
-    this$1.stage.addChild(this$1.items[data.key]);
-  });
+  this.items[data.key] = new PIXI.Sprite(this.worm);
+  this.stage.addChild(this.items[data.key]);
 };
 Render$1.prototype.loadResources = function loadResources (resources) {
     var this$1 = this;
@@ -59,6 +52,7 @@ Render$1.prototype.initialize = function initialize (models) {
 
   if (models)
     { models.forEach(function (key) {
+      this$1.worm = PIXI.loader.resources[key].texture;
       this$1.items[key] = new PIXI.Sprite(PIXI.loader.resources[key].texture);
       this$1.stage.addChild(this$1.items[key]);
     }); }
