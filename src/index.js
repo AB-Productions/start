@@ -1,30 +1,53 @@
 import Renderer from './render';
-const config = {
-  'width':1500,
-  'height':900
-}
+import Socket from './sockets';
+const config = { width: 1500, height: 900 };
 const renderer = new Renderer(config);
-const resources = { worm: './images/worm.png'};
-
-renderer.loadResources(resources);
-
-renderer.animations = () => {
-  if(renderer.keys[87]) {
-    //up
-    renderer.items['worm'].y -= 1;
+const socketConfig = {
+  message: data => {
+    if (data.type === 'init') {
+      renderer.currentPlayer = data.currentPlayer;
+      renderer.loadResources(data.payload);
+    }
+    if (data.type === 'update') {
+      renderer.update(data.payload);
+    }
+  },
+  init: () => {
+    console.log('init');
   }
-  if(renderer.keys[83]) {
-    //down
-    renderer.items['worm'].y += 3;
+};
+const socket = new Socket(socketConfig);
+const animations = () => {
+  if (
+    renderer.keys[87] ||
+      renderer.keys[83] ||
+      renderer.keys[65] ||
+      renderer.keys[68]
+  ) {
+    const currPlayer = renderer.items[renderer.currentPlayer];
+    let stats = {
+      player: renderer.currentPlayer,
+      y: currPlayer.y,
+      x: currPlayer.x
+    };
+    if (renderer.keys[87]) {
+      stats.y -= 3;
+    }
+    if (renderer.keys[83]) {
+      stats.y += 3;
+    }
+    if (renderer.keys[65]) {
+      stats.x -= 3;
+    }
+    if (renderer.keys[68]) {
+      stats.x += 3;
+    }
+    socket.send({
+      type: 'update',
+      stats
+    });
   }
-  if(renderer.keys[65]) {
-    //left
-    renderer.items['worm'].x -= 3;
-  }
-  if(renderer.keys[68]) {
-    //right
-    renderer.items['worm'].x += 3;
-  }
-}
-
+};
+renderer.addSocket(socket);
+renderer.setAnimations(animations);
 renderer.run();

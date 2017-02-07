@@ -3,29 +3,55 @@ export default class Render {
     this.config = config;
     this.items = {};
     this.keys = {};
+    this.currentPlayer = null;
     this.run = this.run.bind(this);
+    this.update = this.update.bind(this);
     this.renderer = PIXI.autoDetectRenderer(config.width, config.height, {
       transparent: true,
       backgroundColor: '0x86D0F2'
     });
     this.stage = new PIXI.Container();
-  }
-
-  loadResources(resources) {
-    const loader = PIXI.loader;
-    Object.keys(resources).forEach(key => {
-      this.items[key] = {};
-      loader.add(key, resources[key]);
-    });
-    loader.load(this.initialize.bind(this));
-  }
-
-  initialize() {
-    Object.keys(this.items).forEach((key) => {
-      this.items[key] = new PIXI.Sprite(PIXI.loader.resources[key].texture);
-      this.stage.addChild(this.items[key]);
-    });
+    this.animations = () => {};
     document.body.appendChild(this.renderer.view);
+    this.loader = PIXI.loader;
+  }
+  update(stats) {
+    const data = Object.keys(stats);
+    data.forEach(key => {
+      if (!this.items[key]) {
+        this.addResource({ key, stats });
+      } else {
+        this.items[key].x = stats[key].x;
+        this.items[key].y = stats[key].y;
+      }
+    });
+  }
+  addResource(data) {
+    this.loader.add(data.key, data.stats.skin);
+    this.loader.load(() => {
+      this.items[data.key] = new PIXI.Sprite(
+        PIXI.loader.resources[data.key].texture
+      );
+      this.stage.addChild(this.items[data.key]);
+    });
+  }
+  loadResources(resources) {
+    const models = Object.keys(resources).map(key => {
+      if (!this.items[key]) {
+        this.items[key] = {};
+        this.loader.add(key, resources[key].skin);
+        return key;
+      }
+    });
+    this.loader.load(this.initialize.bind(this, models));
+  }
+
+  initialize(models) {
+    if (models)
+      models.forEach(key => {
+        this.items[key] = new PIXI.Sprite(PIXI.loader.resources[key].texture);
+        this.stage.addChild(this.items[key]);
+      });
     this.listenKeys();
   }
 
@@ -33,6 +59,14 @@ export default class Render {
     requestAnimationFrame(this.run);
     this.animations();
     this.renderer.render(this.stage);
+  }
+
+  setAnimations(animations) {
+    this.animations = animations;
+  }
+
+  addSocket(socket) {
+    this.socket = socket;
   }
 
   listenKeys() {
@@ -43,7 +77,7 @@ export default class Render {
     const keysReleased = e => {
       this.keys[e.keyCode] = false;
     };
-    window.addEventListener("keydown", keysPressed, false);
-    window.addEventListener("keyup", keysReleased, false);
+    window.onkeydown = keysPressed;
+    window.onkeyup = keysReleased;
   }
 }
