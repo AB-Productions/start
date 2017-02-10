@@ -3,59 +3,59 @@
 
 var Render$1 = function Render(config) {
   this.config = config;
-  this.items = {};
+  this.resources = new Map();
   this.keys = {};
-  this.currentPlayer = null;
+  this.player = null;
   this.run = this.run.bind(this);
   this.update = this.update.bind(this);
   this.renderer = PIXI.autoDetectRenderer(config.width, config.height, {
     transparent: true,
-    backgroundColor: '0x86D0F2'
+    backgroundColor: "0x86D0F2"
   });
   this.stage = new PIXI.Container();
   this.animations = function () {};
-  document.body.appendChild(this.renderer.view);
   this.loader = PIXI.loader;
+  document.body.appendChild(this.renderer.view);
 };
-Render$1.prototype.update = function update (stats) {
+
+Render$1.prototype.update = function update (data) {
     var this$1 = this;
 
-  var data = Object.keys(stats);
-  data.forEach(function (key) {
-    if (!this$1.items[key]) {
-      this$1.addResource({ key: key, stats: stats[key] });
+  data.forEach(function (player) {
+    if (!this$1.resources.has(player.key)) {
+      this$1.addPlayer(player);
     } else {
-      this$1.items[key].x = stats[key].x;
-      this$1.items[key].y = stats[key].y;
+      this$1.resources.get(player.key).x = player.value.x;
+      this$1.resources.get(player.key).y = player.value.y;
     }
   });
 };
-Render$1.prototype.addResource = function addResource (data) {
-  this.items[data.key] = new PIXI.Sprite(this.worm);
-  this.stage.addChild(this.items[data.key]);
+
+Render$1.prototype.addPlayer = function addPlayer (player) {
+  this.resources.set(player.key, new PIXI.Sprite(
+    PIXI.loader.resources[player.value.skin].texture
+  ));
+  this.stage.addChild(this.resources.get(player.key));
 };
-Render$1.prototype.loadResources = function loadResources (resources) {
+
+Render$1.prototype.loadResources = function loadResources (resources, data) {
     var this$1 = this;
 
-  var models = Object.keys(resources).map(function (key) {
-    if (!this$1.items[key]) {
-      this$1.items[key] = {};
-      this$1.loader.add(key, resources[key].skin);
-      return key;
-    }
+  resources.forEach(function (resource) {
+    this$1.loader.add(resource.key, resource.src);
   });
-  this.loader.load(this.initialize.bind(this, models));
+  this.loader.load(this.initialize.bind(this, data));
 };
 
-Render$1.prototype.initialize = function initialize (models) {
+Render$1.prototype.initialize = function initialize (players) {
     var this$1 = this;
 
-  if (models)
-    { models.forEach(function (key) {
-      this$1.worm = PIXI.loader.resources[key].texture;
-      this$1.items[key] = new PIXI.Sprite(PIXI.loader.resources[key].texture);
-      this$1.stage.addChild(this$1.items[key]);
-    }); }
+  players.forEach(function (player) {
+    this$1.resources.set(player.key, new PIXI.Sprite(
+      PIXI.loader.resources[player.value.skin].texture
+    ));
+    this$1.stage.addChild(this$1.resources.get(player.key));
+  });
   this.listenKeys();
 };
 
@@ -90,7 +90,7 @@ Render$1.prototype.listenKeys = function listenKeys () {
 var Socket = function Socket(config) {
   var this$1 = this;
 
-  this.connection = new WebSocket('ws://localhost:3000');
+  this.connection = new WebSocket('ws://192.168.76.12:3000');
   this.connection.onopen = function (msg) {
     config.init();
     this$1.ready = true;
@@ -114,11 +114,17 @@ Socket.prototype.error = function error (err) {
 
 var config = { width: 1500, height: 900 };
 var renderer = new Render$1(config);
+
+var resources = [
+  { key:'worm', src:'./images/worm.png'},
+  { key:'cat', src:'./images/cat.png'}
+];
+
 var socketConfig = {
   message: function (data) {
     if (data.type === 'init') {
-      renderer.currentPlayer = data.currentPlayer;
-      renderer.loadResources(data.payload);
+      renderer.player = data.currentPlayer;
+      renderer.loadResources(resources, data.payload);
     }
     if (data.type === 'update') {
       renderer.update(data.payload);
@@ -136,9 +142,9 @@ var animations = function () {
       renderer.keys[65] ||
       renderer.keys[68]
   ) {
-    var currPlayer = renderer.items[renderer.currentPlayer];
+    var currPlayer = renderer.resources.get(renderer.player);
     var stats = {
-      player: renderer.currentPlayer,
+      player: renderer.player,
       y: currPlayer.y,
       x: currPlayer.x
     };

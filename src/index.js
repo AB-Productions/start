@@ -2,11 +2,17 @@ import Renderer from './render';
 import Socket from './sockets';
 const config = { width: 1500, height: 900 };
 const renderer = new Renderer(config);
+
+const resources = [
+  { key:'worm', src:'./images/worm.png'},
+  { key:'cat', src:'./images/cat.png'}
+]
+
 const socketConfig = {
   message: data => {
     if (data.type === 'init') {
-      renderer.currentPlayer = data.currentPlayer;
-      renderer.loadResources(data.payload);
+      renderer.player = data.currentPlayer;
+      renderer.loadResources(resources, data.payload);
     }
     if (data.type === 'update') {
       renderer.update(data.payload);
@@ -24,9 +30,9 @@ const animations = () => {
       renderer.keys[65] ||
       renderer.keys[68]
   ) {
-    const currPlayer = renderer.items[renderer.currentPlayer];
+    const currPlayer = renderer.resources.get(renderer.player);
     let stats = {
-      player: renderer.currentPlayer,
+      player: renderer.player,
       y: currPlayer.y,
       x: currPlayer.x
     };

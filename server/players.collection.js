@@ -16,17 +16,21 @@ class Players {
     return this.collection.get(key);
   }
 
+  remove(key) {
+    return this.collection.delete(key);
+  }
+
   getPlayers() {
-    let response = {};
+    let response = [];
     for (let [key, value] of this.collection.entries()) {
-      response[key] = value;
+      response.push({key, value});
     }
     return response;
   }
 
   update(payload) {
     this.add(payload.player, {
-      skin: './images/worm.png',
+      skin: 'worm',
       x: payload.x,
       y: payload.y
     });
@@ -35,7 +39,7 @@ class Players {
   createPlayer() {
     const id = uuidV1(), key = `worm${id}`;
     this.add(key, {
-      skin: './images/worm.png',
+      skin: 'worm',
       x: generateRandomNumber(),
       y: generateRandomNumber()
     });
