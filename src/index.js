@@ -1,12 +1,8 @@
 import Renderer from './render';
 import Socket from './sockets';
-const config = { width: 1500, height: 900 };
-const renderer = new Renderer(config);
-
-const resources = [
-  { key:'worm', src:'./images/worm.png'},
-  { key:'cat', src:'./images/cat.png'}
-]
+import { renderConfig, resources } from './helpers/configs';
+const renderer = new Renderer(renderConfig);
+import key from './helpers/keymap';
 
 const socketConfig = {
   message: data => {
@@ -19,34 +15,50 @@ const socketConfig = {
     }
   },
   init: () => {
-    console.log('init');
+    renderer.setAnimations(animations);
+    renderer.run();
   }
 };
 const socket = new Socket(socketConfig);
 const animations = () => {
   if (
-    renderer.keys[87] ||
-      renderer.keys[83] ||
-      renderer.keys[65] ||
-      renderer.keys[68]
+    renderer.keys[key.W] ||
+      renderer.keys[key.S] ||
+      renderer.keys[key.D] ||
+      renderer.keys[key.A] ||
+      renderer.keys[key.UP] ||
+      renderer.keys[key.DOWN] ||
+      renderer.keys[key.CTRL]
   ) {
-    const currPlayer = renderer.resources.get(renderer.player);
+    const currentPlayer = renderer.resources.get(renderer.player);
     let stats = {
       player: renderer.player,
-      y: currPlayer.y,
-      x: currPlayer.x
+      y: currentPlayer.y,
+      x: currentPlayer.x,
+      weapon: {
+        rotation: currentPlayer.children[1].rotation
+      }
     };
-    if (renderer.keys[87]) {
+    if (renderer.keys[key.W]) {
       stats.y -= 3;
     }
-    if (renderer.keys[83]) {
+    if (renderer.keys[key.S]) {
       stats.y += 3;
     }
-    if (renderer.keys[65]) {
+    if (renderer.keys[key.A]) {
       stats.x -= 3;
     }
-    if (renderer.keys[68]) {
+    if (renderer.keys[key.D]) {
       stats.x += 3;
+    }
+    if (renderer.keys[key.UP]) {
+      stats.weapon.rotation -= 0.1;
+    }
+    if (renderer.keys[key.DOWN]) {
+      stats.weapon.rotation += 0.1;
+    }
+    if (renderer.keys[key.CTRL]) {
+      renderer.shoot(stats);
     }
     socket.send({
       type: 'update',
@@ -54,6 +66,3 @@ const animations = () => {
     });
   }
 };
-renderer.addSocket(socket);
-renderer.setAnimations(animations);
-renderer.run();

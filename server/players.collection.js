@@ -1,7 +1,6 @@
 const uuidV1 = require('uuid/v1');
-const generateRandomNumber = () => {
-  return Math.floor(Math.random() * 100) + 1;
-};
+
+const worm = require('./models/worm');
 
 class Players {
   constructor() {
@@ -23,26 +22,18 @@ class Players {
   getPlayers() {
     let response = [];
     for (let [key, value] of this.collection.entries()) {
-      response.push({key, value});
+      response.push({ key, value });
     }
     return response;
   }
 
   update(payload) {
-    this.add(payload.player, {
-      skin: 'worm',
-      x: payload.x,
-      y: payload.y
-    });
+    this.add(payload.player, new worm(payload));
   }
 
   createPlayer() {
     const id = uuidV1(), key = `worm${id}`;
-    this.add(key, {
-      skin: 'worm',
-      x: generateRandomNumber(),
-      y: generateRandomNumber()
-    });
+    this.add(key, new worm());
     return key;
   }
 }
