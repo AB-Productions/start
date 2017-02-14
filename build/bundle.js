@@ -22,8 +22,8 @@ var Player = function Player(params) {
 
 var Bullet = function Bullet(params) {
   this.bullet = new PIXI.Sprite(PIXI.loader.resources['bullet'].texture);
-  this.bullet.x = params.x + Math.cos(params.weapon.rotation) * 20 + 40;
-  this.bullet.y = params.y + Math.cos(params.weapon.rotation) * 20 + 50;
+  this.bullet.x = params.x + Math.cos(params.weapon.rotation) * 30 + (params.weapon.rotation < 0 ? 1 : 40);
+  this.bullet.y = params.y + Math.sin(params.weapon.rotation) * 30 + (params.weapon.rotation < 0 ? 1 : 10);
   this.bullet.rotation = params.weapon.rotation;
   this.speed = 5;
   return this.bullet;
@@ -48,12 +48,11 @@ var Render$1 = function Render(config) {
   this.resources = new Map();
   this.keys = {};
   this.player = null;
-  this.shots = [];
+  this.shots = new Map();
   this.run = this.run.bind(this);
   this.update = this.update.bind(this);
   this.renderer = new PIXI.WebGLRenderer(config.width, config.height);
   this.stage = new PIXI.Container();
-  this.animations = function () {};
   document.body.appendChild(this.renderer.view);
 };
 
@@ -74,6 +73,9 @@ Render$1.prototype.update = function update (data) {
       this$1.resources.get(player.key).children[
         1
       ].rotation = player.value.weapon.rotation;
+    }
+    if (player.value.shot) {
+      this$1.shoot(JSON.parse(player.value.shot));
     }
   });
 };
@@ -97,7 +99,7 @@ Render$1.prototype.addPlayer = function addPlayer (player) {
   PlayerModel.addChild(PlayerWorm);
   PlayerModel.addChild(PlayerWeapon);
   this.resources.set(player.key, PlayerModel);
-  this.stage.addChild(this.resources.get(player.key));
+  this.stage.addChild(PlayerModel);
 };
 
 Render$1.prototype.loadResources = function loadResources (resources, data) {
@@ -109,9 +111,10 @@ Render$1.prototype.loadResources = function loadResources (resources, data) {
 };
 
 Render$1.prototype.shoot = function shoot (stats) {
-  var projectile = new Bullet(stats);
-  this.stage.addChild(projectile);
-  this.shots.push(projectile);
+  var bullet = new Bullet(stats);
+  bullet.uuid = PIXI.utils.uuid();
+  this.stage.addChild(bullet);
+  this.shots.set(bullet.uuid, bullet);
 };
 
 Render$1.prototype.initialize = function initialize (players) {
@@ -123,28 +126,14 @@ Render$1.prototype.initialize = function initialize (players) {
 };
 
 Render$1.prototype.run = function run () {
-    var this$1 = this;
-
   requestAnimationFrame(this.run);
-  this.animations();
-  this.shots.forEach(function (bullet) {
-    bullet.x += Math.cos(bullet.rotation) * 5;
-    bullet.y += Math.sin(bullet.rotation) * 5;
-    if (bullet.x > 600) {
-      this$1.stage.removeChild(bullet);
-    }
-  });
   this.renderer.render(this.stage);
-};
-
-Render$1.prototype.setAnimations = function setAnimations (animations) {
-  this.animations = animations;
 };
 
 var Socket = function Socket(config) {
   var this$1 = this;
 
-  this.connection = new WebSocket('ws://localhost:3000');
+  this.connection = new WebSocket(config.url);
   this.connection.onopen = function (msg) {
     config.init();
     this$1.ready = true;
@@ -186,66 +175,79 @@ var key = {
 
 var renderer = new Render$1(renderConfig);
 var socketConfig = {
+  url: "ws://localhost:3000",
   message: function (data) {
-    if (data.type === 'init') {
+    if (data.type === "init") {
       renderer.player = data.currentPlayer;
       renderer.loadResources(resources, data.payload);
     }
-    if (data.type === 'update') {
+    if (data.type === "update") {
       renderer.update(data.payload);
     }
   },
   init: function () {
-    renderer.setAnimations(animations);
     renderer.run();
   }
 };
+
 var socket = new Socket(socketConfig);
-var animations = function () {
-  if (
-    renderer.keys[key.W] ||
-      renderer.keys[key.S] ||
-      renderer.keys[key.D] ||
-      renderer.keys[key.A] ||
-      renderer.keys[key.UP] ||
-      renderer.keys[key.DOWN] ||
-      renderer.keys[key.CTRL]
-  ) {
-    var currentPlayer = renderer.resources.get(renderer.player);
-    var stats = {
-      player: renderer.player,
-      y: currentPlayer.y,
-      x: currentPlayer.x,
-      weapon: {
-        rotation: currentPlayer.children[1].rotation
-      }
-    };
-    if (renderer.keys[key.W]) {
-      stats.y -= 3;
-    }
-    if (renderer.keys[key.S]) {
-      stats.y += 3;
-    }
-    if (renderer.keys[key.A]) {
-      stats.x -= 3;
-    }
-    if (renderer.keys[key.D]) {
-      stats.x += 3;
-    }
-    if (renderer.keys[key.UP]) {
-      stats.weapon.rotation -= 0.1;
-    }
-    if (renderer.keys[key.DOWN]) {
-      stats.weapon.rotation += 0.1;
-    }
-    if (renderer.keys[key.CTRL]) {
-      renderer.shoot(stats);
-    }
+var animations = function (currentPlayer) {
+  var stats = {
+    player: renderer.player,
+    y: currentPlayer.y,
+    x: currentPlayer.x,
+    weapon: {
+      rotation: currentPlayer.children[1].rotation
+    },
+    shot: null
+  };
+  if (renderer.keys[key.W]) {
+    stats.y -= 3;
+  }
+  if (renderer.keys[key.S]) {
+    stats.y += 3;
+  }
+  if (renderer.keys[key.A]) {
+    stats.x -= 3;
+  }
+  if (renderer.keys[key.D]) {
+    stats.x += 3;
+  }
+  if (renderer.keys[key.UP]) {
+    stats.weapon.rotation -= 0.1;
+  }
+  if (renderer.keys[key.DOWN]) {
+    stats.weapon.rotation += 0.1;
+  }
+  if (renderer.keys[key.CTRL]) {
+    stats.shot = JSON.stringify(stats);
     socket.send({
-      type: 'update',
+      type: "update",
       stats: stats
     });
   }
+  socket.send({
+    type: "update",
+    stats: stats
+  });
 };
+
+PIXI.ticker.shared.add(function () {
+  var currentPlayer = renderer.resources.get(renderer.player);
+  if (currentPlayer) { animations(currentPlayer); }
+  renderer.shots.forEach(function (bullet) {
+    bullet.x += Math.cos(bullet.rotation) * 5;
+    bullet.y += Math.sin(bullet.rotation) * 5;
+    if (
+      bullet.x > renderConfig.width ||
+        bullet.x === 0 ||
+        bullet.y > renderConfig.height ||
+        bullet.y === 0
+    ) {
+      renderer.stage.removeChild(bullet);
+      renderer.shots.delete(bullet.uuid);
+    }
+  });
+});
 
 }());

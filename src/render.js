@@ -9,12 +9,11 @@ export default class Render {
     this.resources = new Map();
     this.keys = {};
     this.player = null;
-    this.shots = [];
+    this.shots = new Map();
     this.run = this.run.bind(this);
     this.update = this.update.bind(this);
     this.renderer = new PIXI.WebGLRenderer(config.width, config.height);
     this.stage = new PIXI.Container();
-    this.animations = () => {};
     document.body.appendChild(this.renderer.view);
   }
 
@@ -33,6 +32,9 @@ export default class Render {
         this.resources.get(player.key).children[
           1
         ].rotation = player.value.weapon.rotation;
+      }
+      if (player.value.shot) {
+        this.shoot(JSON.parse(player.value.shot))
       }
     });
   }
@@ -54,7 +56,7 @@ export default class Render {
     PlayerModel.addChild(PlayerWorm);
     PlayerModel.addChild(PlayerWeapon);
     this.resources.set(player.key, PlayerModel);
-    this.stage.addChild(this.resources.get(player.key));
+    this.stage.addChild(PlayerModel);
   }
 
   loadResources(resources, data) {
@@ -66,9 +68,10 @@ export default class Render {
   }
 
   shoot(stats) {
-    const projectile = new Bullet(stats);
-    this.stage.addChild(projectile);
-    this.shots.push(projectile);
+    const bullet = new Bullet(stats);
+    bullet.uuid = PIXI.utils.uuid();
+    this.stage.addChild(bullet);
+    this.shots.set(bullet.uuid, bullet);
   }
 
   initialize(players) {
@@ -79,18 +82,6 @@ export default class Render {
 
   run() {
     requestAnimationFrame(this.run);
-    this.animations();
-    this.shots.forEach(bullet => {
-      bullet.x += Math.cos(bullet.rotation) * 5;
-      bullet.y += Math.sin(bullet.rotation) * 5;
-      if (bullet.x > 600) {
-        this.stage.removeChild(bullet);
-      }
-    });
     this.renderer.render(this.stage);
-  }
-
-  setAnimations(animations) {
-    this.animations = animations;
   }
 }

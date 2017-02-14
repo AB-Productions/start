@@ -7,9 +7,10 @@ class Worm {
       skin: 'gun',
       rotation: payload ? payload.weapon.rotation : 0
     };
+    this.shot =  payload ? payload.shot : null;
   }
   generateRandomNumber() {
-    return Math.floor(Math.random() * 100) + 1;
+    return Math.floor(Math.random() * 50) + 1;
   }
 }
 
