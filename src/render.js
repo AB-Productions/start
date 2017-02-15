@@ -27,14 +27,22 @@ export default class Render {
         // Server sends more players, than client has online
         this.addPlayer(player);
       } else {
-        this.resources.get(player.key).x = player.value.x;
-        this.resources.get(player.key).y = player.value.y;
-        this.resources.get(player.key).children[
-          1
-        ].rotation = player.value.weapon.rotation;
+        const playerData = this.resources.get(player.key);
+        playerData.pos = player.value.pos;
+        playerData.x = player.value.x;
+        playerData.y = player.value.y;
+        playerData.children[0].setTexture(
+          PIXI.loader.resources[player.value.skin + player.value.pos].texture
+        );
+        playerData.children[1].setTexture(
+          PIXI.loader.resources[
+            player.value.weapon.skin + player.value.pos
+          ].texture
+        );
+        playerData.children[1].rotation = player.value.weapon.rotation;
       }
       if (player.value.shot) {
-        this.shoot(JSON.parse(player.value.shot))
+        this.shoot(JSON.parse(player.value.shot));
       }
     });
   }
@@ -53,6 +61,7 @@ export default class Render {
     const PlayerModel = new PIXI.Container();
     const PlayerWorm = new Player(player);
     const PlayerWeapon = new Weapon(player);
+    PlayerModel.pos = player.value.pos;
     PlayerModel.addChild(PlayerWorm);
     PlayerModel.addChild(PlayerWeapon);
     this.resources.set(player.key, PlayerModel);

@@ -5,5 +5,5 @@ export default {
   D: 68,
   UP: 38,
   DOWN: 40,
-  CTRL: 17
+  SHIFT: 17
 };

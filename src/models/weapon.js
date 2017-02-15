@@ -1,7 +1,7 @@
 export default class Weapon {
   constructor(params) {
     this.weapon = new PIXI.Sprite(
-      PIXI.loader.resources[params.value.weapon.skin].texture
+      PIXI.loader.resources[params.value.weapon.skin + params.value.pos].texture
     );
     this.weapon.x = 20;
     this.weapon.y = 20;
