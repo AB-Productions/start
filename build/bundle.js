@@ -185,7 +185,7 @@ var key = {
   D: 68,
   UP: 38,
   DOWN: 40,
-  SHIFT: 17
+  SHIFT: 16
 };
 
 var renderer = new Render$1(renderConfig);
