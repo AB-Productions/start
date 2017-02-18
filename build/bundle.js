@@ -3,33 +3,38 @@
 
 var Weapon = function Weapon(params) {
   this.weapon = new PIXI.Sprite(
-    PIXI.loader.resources[params.value.weapon.skin + params.value.pos].texture
+    PIXI.loader.resources[params.value.weapon.skin].texture
   );
-  this.weapon.x = 20;
-  this.weapon.y = 20;
+  this.weapon.x = 5;
+  this.weapon.y = 5;
   this.weapon.rotation = params.value.weapon.rotation;
-  this.weapon.anchor.x = 0.2;
-  this.weapon.anchor.y = 0.5;
+  this.weapon.anchor.set(0.7, 0.5);
   return this.weapon;
 };
 
 var Player = function Player(params) {
   this.player = new PIXI.Sprite(
-    PIXI.loader.resources[("" + (params.value.skin) + (params.value.pos))].texture
+    PIXI.loader.resources[params.value.skin].texture
   );
+  this.player.anchor.x = 0.5;
+  this.player.anchor.y = 0.5;
   return this.player;
 };
 
 var Bullet = function Bullet(params) {
   this.bullet = new PIXI.Sprite(PIXI.loader.resources['bullet'].texture);
-  this.bullet.x = params.x +
-    Math.cos(params.weapon.rotation) * 30 +
-    (params.weapon.rotation < 0 ? 1 : 40);
-  this.bullet.y = params.y +
-    Math.sin(params.weapon.rotation) * 30 +
-    (params.weapon.rotation < 0 ? 1 : 10);
   this.bullet.rotation = params.weapon.rotation;
-  this.speed = 5;
+  this.bullet.speed = 5;
+  this.bullet.pos = params.pos;
+  if (params.pos === 'L') {
+    this.bullet.scale.x = -1;
+    this.bullet.x = params.x + Math.sin(params.weapon.rotation) * (-40);
+    this.bullet.y = params.y + Math.cos(params.weapon.rotation) * (-20);
+  } else {
+    this.bullet.scale.x = 1;
+    this.bullet.x = params.x + Math.cos(params.weapon.rotation) * 30;
+    this.bullet.y = params.y + Math.sin(params.weapon.rotation) * 20;
+  }
   return this.bullet;
 };
 
@@ -73,17 +78,12 @@ Render$1.prototype.update = function update (data) {
       this$1.addPlayer(player);
     } else {
       var playerData = this$1.resources.get(player.key);
+      if (player.value.pos !== playerData.pos) {
+        this$1.playerTurn(playerData, player.value);
+      }
       playerData.pos = player.value.pos;
       playerData.x = player.value.x;
       playerData.y = player.value.y;
-      playerData.children[0].setTexture(
-        PIXI.loader.resources[player.value.skin + player.value.pos].texture
-      );
-      playerData.children[1].setTexture(
-        PIXI.loader.resources[
-          player.value.weapon.skin + player.value.pos
-        ].texture
-      );
       playerData.children[1].rotation = player.value.weapon.rotation;
     }
     if (player.value.shot) {
@@ -91,7 +91,18 @@ Render$1.prototype.update = function update (data) {
     }
   });
 };
-
+Render$1.prototype.playerTurn = function playerTurn (playerData, values) {
+  var worm = playerData.children[0], gun = playerData.children[1];
+  if (values.pos === 'L') {
+    worm.scale.x = 1;
+    gun.scale.x = 1;
+    gun.x = -5;
+  } else if (values.pos === 'R') {
+    worm.scale.x = -1;
+    gun.scale.x = -1;
+    gun.x = 5;
+  }
+};
 Render$1.prototype.findDeletedPlayer = function findDeletedPlayer (data) {
     var this$1 = this;
 
@@ -169,11 +180,9 @@ Socket.prototype.error = function error (err) {
 };
 
 var resources = [
-  { key: 'wormR', src: './images/wormR.png' },
-  { key: 'wormL', src: './images/wormL.png' },
+  { key: 'worm', src: './images/worm.png' },
   { key: 'cat', src: './images/cat.png' },
-  { key: 'gunR', src: './images/gunR.png' },
-  { key: 'gunL', src: './images/gunL.png' },
+  { key: 'gun', src: './images/gun.png' },
   { key: 'bullet', src: './images/bullet.png' }
 ];
 var renderConfig = { width: 1500, height: 600 };
@@ -232,10 +241,18 @@ var animations = function (currentPlayer) {
     stats.pos = 'R';
   }
   if (renderer.keys[key.UP]) {
-    stats.weapon.rotation -= 0.1;
+    if (stats.pos === 'R') {
+      stats.weapon.rotation -= 0.1;
+    } else {
+      stats.weapon.rotation += 0.1;
+    }
   }
   if (renderer.keys[key.DOWN]) {
-    stats.weapon.rotation += 0.1;
+    if (stats.pos === 'R') {
+      stats.weapon.rotation += 0.1;
+    } else {
+      stats.weapon.rotation -= 0.1;
+    }
   }
   if (renderer.keys[key.SHIFT]) {
     stats.shot = JSON.stringify(stats);
@@ -248,18 +265,22 @@ var animations = function (currentPlayer) {
 
 PIXI.ticker.shared.add(function () {
   var currentPlayer = renderer.resources.get(renderer.player);
-
   if (currentPlayer) {
     animations(currentPlayer);
   }
   renderer.shots.forEach(function (bullet) {
-    bullet.x += Math.cos(bullet.rotation) * 5;
-    bullet.y += Math.sin(bullet.rotation) * 5;
+    if (bullet.pos === 'R') {
+      bullet.x += Math.cos(bullet.rotation) * bullet.speed;
+      bullet.y += Math.sin(bullet.rotation) * bullet.speed;
+    } else {
+      bullet.x -= Math.cos(bullet.rotation) * bullet.speed;
+      bullet.y -= Math.sin(bullet.rotation) * bullet.speed;
+    }
     if (
       bullet.x > renderConfig.width ||
-      bullet.x === 0 ||
-      bullet.y > renderConfig.height ||
-      bullet.y === 0
+        bullet.x === 0 ||
+        bullet.y > renderConfig.height ||
+        bullet.y === 0
     ) {
       renderer.stage.removeChild(bullet);
       renderer.shots.delete(bullet.uuid);

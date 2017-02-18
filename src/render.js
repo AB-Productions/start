@@ -28,17 +28,12 @@ export default class Render {
         this.addPlayer(player);
       } else {
         const playerData = this.resources.get(player.key);
+        if (player.value.pos !== playerData.pos) {
+          this.playerTurn(playerData, player.value);
+        }
         playerData.pos = player.value.pos;
         playerData.x = player.value.x;
         playerData.y = player.value.y;
-        playerData.children[0].setTexture(
-          PIXI.loader.resources[player.value.skin + player.value.pos].texture
-        );
-        playerData.children[1].setTexture(
-          PIXI.loader.resources[
-            player.value.weapon.skin + player.value.pos
-          ].texture
-        );
         playerData.children[1].rotation = player.value.weapon.rotation;
       }
       if (player.value.shot) {
@@ -46,7 +41,18 @@ export default class Render {
       }
     });
   }
-
+  playerTurn(playerData, values) {
+    const worm = playerData.children[0], gun = playerData.children[1];
+    if (values.pos === 'L') {
+      worm.scale.x = 1;
+      gun.scale.x = 1;
+      gun.x = -5;
+    } else if (values.pos === 'R') {
+      worm.scale.x = -1;
+      gun.scale.x = -1;
+      gun.x = 5;
+    }
+  }
   findDeletedPlayer(data) {
     this.resources.forEach((value, key) => {
       const playerOnline = data.filter(player => player.key === key);

@@ -47,10 +47,18 @@ const animations = currentPlayer => {
     stats.pos = 'R';
   }
   if (renderer.keys[key.UP]) {
-    stats.weapon.rotation -= 0.1;
+    if (stats.pos === 'R') {
+      stats.weapon.rotation -= 0.1;
+    } else {
+      stats.weapon.rotation += 0.1;
+    }
   }
   if (renderer.keys[key.DOWN]) {
-    stats.weapon.rotation += 0.1;
+    if (stats.pos === 'R') {
+      stats.weapon.rotation += 0.1;
+    } else {
+      stats.weapon.rotation -= 0.1;
+    }
   }
   if (renderer.keys[key.SHIFT]) {
     stats.shot = JSON.stringify(stats);
@@ -63,18 +71,22 @@ const animations = currentPlayer => {
 
 PIXI.ticker.shared.add(() => {
   const currentPlayer = renderer.resources.get(renderer.player);
-
   if (currentPlayer) {
     animations(currentPlayer);
   }
   renderer.shots.forEach(bullet => {
-    bullet.x += Math.cos(bullet.rotation) * 5;
-    bullet.y += Math.sin(bullet.rotation) * 5;
+    if (bullet.pos === 'R') {
+      bullet.x += Math.cos(bullet.rotation) * bullet.speed;
+      bullet.y += Math.sin(bullet.rotation) * bullet.speed;
+    } else {
+      bullet.x -= Math.cos(bullet.rotation) * bullet.speed;
+      bullet.y -= Math.sin(bullet.rotation) * bullet.speed;
+    }
     if (
       bullet.x > renderConfig.width ||
-      bullet.x === 0 ||
-      bullet.y > renderConfig.height ||
-      bullet.y === 0
+        bullet.x === 0 ||
+        bullet.y > renderConfig.height ||
+        bullet.y === 0
     ) {
       renderer.stage.removeChild(bullet);
       renderer.shots.delete(bullet.uuid);
