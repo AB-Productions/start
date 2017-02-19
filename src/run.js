@@ -1,29 +1,36 @@
-import Renderer from './render';
+import Renderer from './renderer';
 import Socket from './sockets';
+import { Gamefield } from './gamelogic';
 import { renderConfig, resources } from './helpers/configs';
-const renderer = new Renderer(renderConfig);
-import key from './helpers/keymap';
-
 const socketConfig = {
-  url: 'ws://localhost:3000',
-  message: data => {
-    if (data.type === 'init') {
-      renderer.player = data.currentPlayer;
-      renderer.loadResources(resources, data.payload);
-    }
-    if (data.type === 'update') {
-      renderer.update(data.payload);
-    }
-  },
-  init: () => {
-    renderer.run();
-  }
+  url: 'ws://localhost:3000'
 };
 
 const socket = new Socket(socketConfig);
+const Stage = new PIXI.Container();
+
+const gamefield = new Gamefield(Stage);
+const renderer = new Renderer(renderConfig, Stage);
+const key = renderer.keys.keymap;
+
+socket.connection.onmessage = data => {
+  const response = JSON.parse(data.data);
+  switch (response.type) {
+    case 'init':
+      gamefield.player = response.currentPlayer;
+      renderer.loadResources(resources);
+      PIXI.loader.load(gamefield.initialize(response.payload));
+      renderer.run();
+      break;
+    case 'update':
+      gamefield.update(response.payload);
+      break;
+  }
+};
+
 const animations = currentPlayer => {
   let stats = {
-    player: renderer.player,
+    player: gamefield.player,
     y: currentPlayer.y,
     x: currentPlayer.x,
     pos: currentPlayer.pos,
@@ -32,37 +39,45 @@ const animations = currentPlayer => {
     },
     shot: null
   };
-  if (renderer.keys[key.W]) {
+
+  renderer.keys.on(key.W, () => {
     stats.y -= 3;
-  }
-  if (renderer.keys[key.S]) {
+  });
+
+  renderer.keys.on(key.S, () => {
     stats.y += 3;
-  }
-  if (renderer.keys[key.A]) {
+  });
+
+  renderer.keys.on(key.A, () => {
     stats.x -= 3;
     stats.pos = 'L';
-  }
-  if (renderer.keys[key.D]) {
+  });
+
+  renderer.keys.on(key.D, () => {
     stats.x += 3;
     stats.pos = 'R';
-  }
-  if (renderer.keys[key.UP]) {
+  });
+
+  renderer.keys.on(key.UP, () => {
     if (stats.pos === 'R') {
       stats.weapon.rotation -= 0.1;
     } else {
       stats.weapon.rotation += 0.1;
     }
-  }
-  if (renderer.keys[key.DOWN]) {
+  });
+
+  renderer.keys.on(key.DOWN, () => {
     if (stats.pos === 'R') {
       stats.weapon.rotation += 0.1;
     } else {
       stats.weapon.rotation -= 0.1;
     }
-  }
-  if (renderer.keys[key.SHIFT]) {
+  });
+
+  renderer.keys.on(key.SHIFT, () => {
     stats.shot = JSON.stringify(stats);
-  }
+  });
+
   socket.send({
     type: 'update',
     stats
@@ -70,11 +85,13 @@ const animations = currentPlayer => {
 };
 
 PIXI.ticker.shared.add(() => {
-  const currentPlayer = renderer.resources.get(renderer.player);
+  const currentPlayer = gamefield.resources.get(gamefield.player);
+
   if (currentPlayer) {
     animations(currentPlayer);
   }
-  renderer.shots.forEach(bullet => {
+
+  gamefield.actions.shots.forEach(bullet => {
     if (bullet.pos === 'R') {
       bullet.x += Math.cos(bullet.rotation) * bullet.speed;
       bullet.y += Math.sin(bullet.rotation) * bullet.speed;
@@ -89,7 +106,7 @@ PIXI.ticker.shared.add(() => {
         bullet.y === 0
     ) {
       renderer.stage.removeChild(bullet);
-      renderer.shots.delete(bullet.uuid);
+      gamefield.actions.shots.delete(bullet.uuid);
     }
   });
 });

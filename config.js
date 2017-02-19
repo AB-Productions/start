@@ -7,10 +7,10 @@ import replace from 'rollup-plugin-replace';
 
 const production = process.env.NODE_ENV == 'production' ? true : false;
 let plugins = [
-  buble(),
   cjs({ include: ['node_modules/**'] }),
   npm({ jsnext: true, main: true, browser: true }),
-  json()
+  json(),
+  buble()
 ];
 if (production)
   plugins.push(
@@ -18,7 +18,7 @@ if (production)
     replace({ 'process.env.NODE_ENV': JSON.stringify('production') })
   );
 export default {
-  entry: 'src/index.js',
+  entry: 'src/run.js',
   format: 'iife',
   plugins: plugins,
   dest: 'build/bundle.js'

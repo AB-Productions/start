@@ -3,7 +3,7 @@ class Worm {
     this.skin = 'worm';
     this.x = payload ? payload.x : this.generateRandomNumber();
     this.y = payload ? payload.y : this.generateRandomNumber();
-    this.pos = payload ? payload.pos : 'L';
+    this.pos = payload ? payload.pos : 'R';
     this.weapon = {
       skin: 'gun',
       rotation: payload ? payload.weapon.rotation : 0
@@ -11,7 +11,7 @@ class Worm {
     this.shot = payload ? payload.shot : null;
   }
   generateRandomNumber() {
-    return Math.floor(Math.random() * 50) + 1;
+    return Math.floor(Math.random() * 250) + 1;
   }
 }
 
