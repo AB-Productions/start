@@ -1,5 +1,5 @@
-import { Player, Weapon, Bullet } from '../models';
-import { Actions } from './index';
+import { Player, Weapon, Bullet } from '../models/index.js';
+import { Actions } from './index.js';
 export default class Gamefield {
   constructor(stage) {
     this.resources = new Map();

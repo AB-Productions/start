@@ -1,7 +1,7 @@
-import Renderer from './renderer';
-import Socket from './sockets';
-import { Gamefield } from './gamelogic';
-import { renderConfig, resources } from './helpers/configs';
+import Renderer from './renderer/index.js';
+import Socket from './sockets/index.js';
+import { Gamefield } from './gamelogic/index.js';
+import { renderConfig, resources } from './helpers/configs.js';
 const socketConfig = {
   url: 'ws://localhost:3000'
 };

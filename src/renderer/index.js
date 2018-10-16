@@ -1,4 +1,4 @@
-import KeyListener from '../helpers/keylistener';
+import KeyListener from '../helpers/keylistener.js';
 
 export default class Render {
   constructor(config, stage) {

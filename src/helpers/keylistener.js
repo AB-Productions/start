@@ -1,4 +1,4 @@
-import keys from './keymap';
+import keys from './keymap.js';
 
 export default class ListenKeys {
   constructor() {

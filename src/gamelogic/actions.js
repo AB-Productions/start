@@ -1,4 +1,4 @@
-import { Player, Weapon, Bullet } from '../models';
+import { Player, Weapon, Bullet } from '../models/index.js';
 
 export default class Actions {
   constructor(stage) {
